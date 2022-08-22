@@ -7,19 +7,19 @@ source("helper_functions.R")
 n_boot <- 1000
 
 # number of cores for bootstrapping
-n_cores <- 5
+n_cores <- 8
 
 
 # Load data ---------------------------------------------------------------
 
-twins_path  <- "data/TwinsUK.xls"
+twins_path  <- bb_path
 
 # Load from files
-twins_train_data <- read_xls(twins_path,  "Training Set", col_types = "numeric")
-twins_test_data  <- read_xls(twins_path,  "Testing Set", col_types = "numeric")
+twins_train_data <- read_xlsx(twins_path,  "Training Set", col_types = "numeric")
+twins_test_data  <- read_xlsx(twins_path,  "Testing Set", col_types = "numeric")
 
 # Load precalculated reconstructions
-recon_path <- "results/reconstructions"
+recon_path <- "results/opt_reconstruction"
 
 
 # Get reconstruction scores -------------------------------------
@@ -32,11 +32,11 @@ recon_path <- "results/reconstructions"
 # d = [5, 10, 15, 18, 20, 30, 40, 60, 80, 100, 120, 160, 200]
 
 
-if(!file.exists("results/reconstruction_scores.csv")) {
+if(!file.exists("results/bb_reconstruction_scores.csv")) {
   
   twins_recon_files <-
     list.files(recon_path,
-               pattern = "Twins",
+               pattern = "BB",
                recursive = TRUE,
                full.names = TRUE)
   
@@ -65,7 +65,7 @@ if(!file.exists("results/reconstruction_scores.csv")) {
                              twins_train_data,
                              n_times = n_boot,
                              n_cores = n_cores) %>%
-        dplyr::mutate(data = "Twins Train",
+        dplyr::mutate(data = "BB Train",
                       d_dim = str_extract(dim_idx, "[0-9]+") %>% as.numeric())
       
       test_scores <-
@@ -74,7 +74,7 @@ if(!file.exists("results/reconstruction_scores.csv")) {
                              twins_test_data,
                              n_times = n_boot,
                              n_cores = n_cores) %>%
-        dplyr::mutate(data = "Twins Test",
+        dplyr::mutate(data = "BB Test",
                       d_dim = str_extract(dim_idx, "[0-9]+") %>% as.numeric())
       
       bind_rows(train_scores, test_scores)
@@ -82,21 +82,21 @@ if(!file.exists("results/reconstruction_scores.csv")) {
     }) %>%
     bind_rows()
   
-  twins_scores %>% write_csv("results/reconstruction_scores.csv")
+  twins_scores %>% write_csv("results/bb_reconstruction_scores.csv")
   
 }
 
 
 # Create plot object, different MSEs for d=18 --------------------------------------
 
-all_metrics <- read_csv("results/reconstruction_scores.csv")
+all_metrics <- read_csv("results/bb_reconstruction_scores.csv")
 
 # plot score boxplots
 
 all_metrics_processed <- 
   all_metrics %>% 
   # NOTE: I'm only looking at Twins reconstruction here
-  filter(str_detect(data, "Twins")) %>% 
+  filter(str_detect(data, "BB")) %>%
   pivot_longer(cols = c("mse_cormat", 
                         "mse")) %>% 
   dplyr::mutate(
@@ -104,14 +104,14 @@ all_metrics_processed <-
       name == "mse_cormat" ~ "MSE (CorMat)",
       name == "mse" ~ "MSE"
     ),
-    data = fct_relevel(data, "Twins Train", "Twins Test" )
+    data = fct_relevel(data, "BB Train", "BB Test" )
   )
 
 
 # Get MSE plots
 
-mse_plot_train <- get_mse_plot("Twins Train", "Training set", all_metrics_processed, 2)
-mse_plot_test <- get_mse_plot("Twins Test", "Test set",all_metrics_processed, 2)
+mse_plot_train <- get_mse_plot("BB Train", "Training set", all_metrics_processed, 2)
+mse_plot_test <- get_mse_plot("BB Test", "Test set",all_metrics_processed, 2)
 
 # Get correlation matrix MSE (CM-MSE) plots
 mse_cormat_plot <- 
@@ -166,21 +166,28 @@ mse_cormat_range_plot <-
 # display plot objects -------------------------------------------------------
 
 # MSE
+png(file="mse_plot_train.png")
 mse_plot_train
+graphics.off()
+png(file="mse_plot_test.png")
 mse_plot_test
+graphics.off()
 
 # CM-MSE
+png(file="mse_cormat_plot.png")
 mse_cormat_plot
+graphics.off()
+png(file="mse_cormat_range_plot.png")
 mse_cormat_range_plot
-
+graphics.off()
 
 # KPCA extended figure plots
 
-if(!file.exists("results/reconstruction_scores_kpca.csv")) {
+if(!file.exists("results/bb_reconstruction_scores_kpca.csv")) {
   
   twins_recon_files <-
     list.files(recon_path,
-               pattern = "Twins",
+               pattern = "BB",
                recursive = TRUE,
                full.names = TRUE)
   
@@ -210,7 +217,7 @@ if(!file.exists("results/reconstruction_scores_kpca.csv")) {
                              twins_train_data,
                              n_times = n_boot,
                              n_cores = n_cores) %>%
-        dplyr::mutate(data = "Twins Train",
+        dplyr::mutate(data = "BB Train",
                       d_dim = str_extract(dim_idx, "[0-9]+") %>% as.numeric())
       
       test_scores <-
@@ -221,7 +228,7 @@ if(!file.exists("results/reconstruction_scores_kpca.csv")) {
                              twins_test_data,
                              n_times = n_boot,
                              n_cores = n_cores) %>%
-        dplyr::mutate(data = "Twins Test",
+        dplyr::mutate(data = "BB Test",
                       d_dim = str_extract(dim_idx, "[0-9]+") %>% as.numeric())
       
       bind_rows(train_scores, test_scores)
@@ -229,15 +236,15 @@ if(!file.exists("results/reconstruction_scores_kpca.csv")) {
     }) %>%
     bind_rows()
   
-  kpca_twins_scores %>% write_csv("results/reconstruction_scores_kcpa.csv")
+  kpca_twins_scores %>% write_csv("results/bb_reconstruction_scores_kcpa.csv")
 }
 
-kpca_metrics <- read_csv("results/reconstruction_scores_kcpa.csv")
+kpca_metrics <- read_csv("results/bb_reconstruction_scores_kcpa.csv")
 
 kpca_metrics_processed <- 
   kpca_metrics %>% 
   # NOTE: I'm only looking at Twins reconstruction here
-  filter(str_detect(data, "Twins")) %>% 
+  filter(str_detect(data, "BB")) %>%
   pivot_longer(cols = c("mse_cormat", 
                         "mse")) %>% 
   dplyr::mutate(
@@ -245,13 +252,13 @@ kpca_metrics_processed <-
       name == "mse_cormat" ~ "MSE (CorMat)",
       name == "mse" ~ "MSE"
     ),
-    data = fct_relevel(data, "Twins Train", "Twins Test" )
+    data = fct_relevel(data, "BB Train", "BB Test" )
   )
   
 # Get KPCA MSE plots
 
-kpca_mse_plot_train <- get_mse_plot("Twins Train", "Training set", kpca_metrics_processed, 4)
-kpca_mse_plot_test <- get_mse_plot("Twins Test", "Test set",kpca_metrics_processed, 4)
+kpca_mse_plot_train <- get_mse_plot("BB Train", "Training set", kpca_metrics_processed, 4)
+kpca_mse_plot_test <- get_mse_plot("BB Test", "Test set",kpca_metrics_processed, 4)
 
 # Get correlation matrix MSE (CM-MSE) plots
 kpca_mse_cormat_plot <- 
@@ -282,7 +289,7 @@ kpca_mse_cormat_range_plot_train <-
   kpca_metrics_processed %>% 
   filter(name == "mse_cormat") %>% 
   filter(label == "MSE (CorMat)") %>% 
-  filter(data=="Twins Train") %>% 
+  filter(data=="BB Train") %>%
   dplyr::select(model, seed, data, d_dim, name, value, label) %>% 
   group_by(model, data, d_dim, label) %>%
   dplyr::summarise(mean = mean(value),
@@ -305,7 +312,7 @@ kpca_mse_cormat_range_plot_test <-
   kpca_metrics_processed %>% 
   filter(name == "mse_cormat") %>% 
   filter(label == "MSE (CorMat)") %>% 
-  filter(data=="Twins Test") %>% 
+  filter(data=="BB Test") %>%
   dplyr::select(model, seed, data, d_dim, name, value, label) %>% 
   group_by(model, data, d_dim, label) %>%
   dplyr::summarise(mean = mean(value),
@@ -328,11 +335,20 @@ kpca_mse_cormat_range_plot_test <-
 # display plot objects -------------------------------------------------------
 
 # KPCA MSE
+png(file="kpca_mse_plot_train.png")
 kpca_mse_plot_train
+graphics.off()
+png(file="kpca_mse_plot_test.png")
 kpca_mse_plot_test
+graphics.off()
 
 # KPCA CM-MSE
+png(file="kpca_mse_cormat_plot.png")
 kpca_mse_cormat_plot
+graphics.off()
+png(file="kpca_mse_cormat_range_plot_train.png")
 kpca_mse_cormat_range_plot_train
+graphics.off()
+png(file="kpca_mse_cormat_range_plot_test.png")
 kpca_mse_cormat_range_plot_test
-
+graphics.off()

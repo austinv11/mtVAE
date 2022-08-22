@@ -24,6 +24,7 @@ library(readxl)
 qmdiab_path <- "data/QMDiab.xls"
 schiz_path  <- "data/Schizophrenia.xls"
 aml_path    <- "data/AML.xls"
+bb_path     <- "data/BioBank.xlsx"
 
 qm_lookup <- 
   read_xls(qmdiab_path, "Metabolite Annotations")
@@ -35,6 +36,9 @@ aml_lookup <-
 
 schizo_lookup <- 
   read_xls(schiz_path, "Metabolite Annotations")
+
+bb_lookup <-
+  read_xlsx(bb_path, "Metabolite Annotations")
 
 
 # 03_assess_model_performance ---------------------------------------------

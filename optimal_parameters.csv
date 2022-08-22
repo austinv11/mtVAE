@@ -1,0 +1,5 @@
+param,value,integer
+encoder_units,220,1
+decoder_units,140,1
+learning_rate,0.0010820242763584396,0
+kl_beta,0.0011214806490542702,0
